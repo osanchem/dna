@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🧬 DNA 서열 조합 미션</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --A: #F5C518; --A-dk: #5a3f00; --A-lt: #fffbe6;
+  --T: #3A8DDE; --T-dk: #0c3d6e; --T-lt: #e8f3fc;
+  --G: #2EAD6A; --G-dk: #0d4a27; --G-lt: #e4f7ee;
+  --C: #F07D2A; --C-dk: #5c2500; --C-lt: #fff3e8;
+  --U: #8D5CF6; --U-dk: #2f1668; --U-lt: #f1edff;
+  --bg: #f5f4ef; --card: #fff; --border: #e6e4dc;
+  --text: #181816; --text2: #6a6960; --text3: #aaa99f;
+  --r: 16px; --rsm: 10px;
+}
+html { -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; font-size: 15px; line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 0 20px; position: sticky; top: 0; z-index: 100;
+}
+.header-inner {
+  max-width: 680px; margin: 0 auto;
+  display: flex; align-items: center; height: 54px; gap: 12px;
+}
+.logo { font-size: 15px; font-weight: 800; letter-spacing: -.03em; display: flex; align-items: center; gap: 7px; }
+.dna-dots { display: flex; gap: 3px; }
+.dna-dot { width: 8px; height: 8px; border-radius: 50%; }
+.header-score { margin-left: auto; font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+.header-score strong { font-size: 20px; font-weight: 800; color: var(--text); }
+
+/* ── Layout ── */
+.wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 80px; }
+
+/* ── Mission card ── */
+.mc {
+  border-radius: var(--r); padding: 22px 24px;
+  margin-bottom: 16px; color: #fff;
+  position: relative; overflow: hidden; transition: background .5s;
+}
+.mc::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,.07);
+}
+.mc-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,.15); border-radius:20px;
+  padding:3px 11px; font-size:11px; font-weight:700;
+  letter-spacing:.07em; text-transform:uppercase; margin-bottom:8px;
+}
+.mc-title { font-size:22px; font-weight:800; letter-spacing:-.04em; margin-bottom:4px; }
+.mc-desc { font-size:12px; color:rgba(255,255,255,.6); margin-bottom:14px; line-height:1.6; }
+.mc-footer { display:flex; align-items:center; justify-content:space-between; }
+.mc-dots { display:flex; gap:5px; }
+.mdot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.25); transition:all .3s; }
+.mdot.done { background:rgba(255,255,255,.7); }
+.mdot.current { background:#fff; transform:scale(1.4); }
+.mc-pts { font-size:12px; color:rgba(255,255,255,.55); }
+.mc-pts strong { font-size:18px; font-weight:800; color:#fff; }
+
+/* ── Card ── */
+.card { background:var(--card); border-radius:var(--r); border:1px solid var(--border); padding:20px; margin-bottom:14px; }
+
+/* ── Controls ── */
+.ctrl { display:flex; gap:8px; margin-bottom:16px; }
+.btn {
+  padding:10px 16px; border-radius:var(--rsm);
+  font-size:13px; font-weight:700; font-family:'Pretendard',sans-serif;
+  cursor:pointer; border:1.5px solid var(--border);
+  background:var(--card); color:var(--text);
+  display:flex; align-items:center; gap:5px;
+  transition:background .12s, transform .1s;
+  /* touch */
+  touch-action:manipulation; user-select:none;
+  min-height:44px;
+}
+.btn:active { transform:scale(.95); background:var(--bg); }
+.btn:disabled { opacity:.35; pointer-events:none; }
+.btn.primary { background:var(--text); color:#fff; border-color:var(--text); }
+.btn.primary:active { background:#333; }
+
+/* ── Strand board ── */
+.board {
+  background:var(--bg); border-radius:var(--r);
+  border:1px solid var(--border); padding:18px 14px;
+  overflow-x:auto; margin-bottom:18px;
+  -webkit-overflow-scrolling:touch;
+}
+.srow { display:flex; align-items:center; gap:5px; min-width:max-content; margin-bottom:3px; }
+.slbl { font-size:10px; font-weight:700; color:var(--text3); min-width:66px; text-align:right; flex-shrink:0; }
+.drow { display:flex; align-items:center; gap:5px; min-width:max-content; margin-bottom:2px; }
+.dtxt { font-size:10px; color:var(--text3); font-weight:700; letter-spacing:.04em; }
+
+/* ── Chips ── */
+.ch {
+  width:48px; height:48px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; font-weight:800; flex-shrink:0;
+}
+.ch-A{background:var(--A);color:var(--A-dk);}
+.ch-T{background:var(--T);color:#fff;}
+.ch-G{background:var(--G);color:#fff;}
+.ch-C{background:var(--C);color:#fff;}
+.ch-U{background:var(--U);color:#fff;}
+
+.bcol { width:48px; display:flex; flex-direction:column; align-items:center; gap:3px; padding:3px 0; flex-shrink:0; }
+.bdot { width:4px; height:4px; border-radius:50%; background:var(--border); }
+
+/* ── Slots ── */
+.slot {
+  width:48px; height:48px; border-radius:10px;
+  border:2px dashed var(--border); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; font-weight:800;
+  cursor:pointer; transition:border-color .12s, background .12s;
+  touch-action:manipulation; user-select:none;
+}
+.slot:active { background:rgba(0,0,0,.04); }
+.slot.filled { border-style:solid; }
+.slot.correct { border-color:var(--G)!important; background:var(--G-lt)!important; }
+.slot.wrong { border-color:#e24b4a!important; background:#fcebeb!important; animation:shake .3s; }
+.slot.hinted { border-color:var(--A)!important; background:var(--A-lt)!important; color:var(--A-dk)!important; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+/* ── card hand ── */
+.hand-label { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:.07em; text-transform:uppercase; margin-bottom:12px; }
+.hand {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+}
+.hcard {
+  height:64px; border-radius:12px;
+  border:3px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; font-weight:800; cursor:pointer;
+  transition:transform .12s, border-color .12s, box-shadow .12s;
+  touch-action:manipulation; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.hcard:active { transform:scale(.93); }
+.hcard.selected {
+  border-color:var(--text);
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+  transform:translateY(-4px);
+}
+
+/* ── Progress ── */
+.prog-row { display:flex; align-items:center; gap:10px; margin-top:12px; }
+.prog-bg { flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
+.prog-fill { height:100%; background:var(--G); border-radius:4px; transition:width .3s; }
+.prog-txt { font-size:11px; font-weight:700; color:var(--text2); min-width:36px; text-align:right; }
+
+/* ── Feedback ── */
+.fb { display:none; padding:11px 15px; border-radius:var(--rsm); font-size:13px; font-weight:600; margin-top:10px; }
+.fb.show { display:block; }
+.fb.ok  { background:var(--G-lt); color:var(--G-dk); border:1px solid #a3d9b8; }
+.fb.err { background:#fcebeb; color:#7f1d1d; border:1px solid #f0b4b4; }
+.fb.inf { background:var(--A-lt); color:var(--A-dk); border:1px solid #f5d87a; }
+
+/* ── Overlay ── */
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.55); z-index:200;
+  align-items:center; justify-content:center;
+  padding:20px;
+}
+.overlay.show { display:flex; }
+.obox {
+  background:var(--card); border-radius:22px;
+  padding:36px 32px; text-align:center;
+  max-width:380px; width:100%;
+  animation:popIn .32s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+.oe { font-size:52px; margin-bottom:10px; }
+.ot { font-size:24px; font-weight:800; letter-spacing:-.04em; margin-bottom:6px; }
+.os { font-size:28px; margin:8px 0 14px; letter-spacing:4px; }
+.ob { font-size:13px; color:var(--text2); line-height:1.8; margin-bottom:24px; }
+.obtns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ── All done ── */
+.alldone {
+  display:none; position:fixed; inset:0;
+  background:var(--bg); z-index:300;
+  align-items:center; justify-content:center;
+  flex-direction:column; text-align:center; padding:28px;
+}
+.alldone.show { display:flex; }
+.ad-em { font-size:64px; margin-bottom:12px; }
+.ad-t  { font-size:32px; font-weight:800; letter-spacing:-.05em; margin-bottom:8px; }
+.ad-sc { font-size:56px; font-weight:800; letter-spacing:-.05em; margin-bottom:4px; }
+.ad-sl { font-size:12px; color:var(--text3); font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:20px; }
+.ad-sb { font-size:14px; color:var(--text2); max-width:320px; line-height:1.8; margin-bottom:28px; }
+.stars-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
+.sbox { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; text-align:center; }
+.sbox span { display:block; font-size:10px; color:var(--text3); margin-top:2px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="dna-dots">
+        <div class="dna-dot" style="background:var(--A)"></div>
+        <div class="dna-dot" style="background:var(--T)"></div>
+        <div class="dna-dot" style="background:var(--G)"></div>
+        <div class="dna-dot" style="background:var(--C)"></div>
+      </div>
+      DNA 서열 조합 미션
+    </div>
+    <div class="header-score">총 점수 <strong id="hScore">0</strong></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Mission card -->
+  <div class="mc" id="mc">
+    <div class="mc-badge" id="mcBadge"></div>
+    <div class="mc-title" id="mcTitle"></div>
+    <div class="mc-desc"  id="mcDesc"></div>
+    <div class="mc-footer">
+      <div class="mc-dots" id="mcDots"></div>
+      <div class="mc-pts">염기당 <strong id="mcPts"></strong>점</div>
+    </div>
+  </div>
+
+  <!-- Board card -->
+  <div class="card">
+    <div class="ctrl">
+      <button class="btn" ontouchstart="" onclick="newRound()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M13 2.5A6.5 6.5 0 1 0 11 11.5"/><polyline points="13 2.5 13 6.5 9 6.5"/></svg>
+        새 서열
+      </button>
+      <button class="btn" id="hintBtn" ontouchstart="" onclick="useHint()">
+        💡 힌트 <span id="hintLeft" style="font-size:11px;opacity:.6"></span>
+      </button>
+      <button class="btn primary" ontouchstart="" onclick="checkAnswer()">정답 확인 ✓</button>
+    </div>
+
+    <div class="board">
+      <div class="drow"><div style="min-width:66px;flex-shrink:0;"></div><div class="dtxt" id="dirT"></div></div>
+      <div class="srow" id="gRow"><div class="slbl">주어진 가닥</div></div>
+      <div class="srow" id="bRow"><div class="slbl"></div></div>
+      <div class="srow" id="aRow"><div class="slbl">상보 가닥</div></div>
+      <div class="drow" style="margin-top:2px"><div style="min-width:66px;flex-shrink:0;"></div><div class="dtxt" id="dirB"></div></div>
+    </div>
+
+    <div class="hand-label">염기 카드 선택 후 → 빈 칸 탭</div>
+    <div class="hand" id="hand">
+      <div class="hcard ch-A" ontouchstart="" onclick="selectBase('A')">A</div>
+      <div class="hcard ch-T" ontouchstart="" onclick="selectBase('T')">T</div>
+      <div class="hcard ch-G" ontouchstart="" onclick="selectBase('G')">G</div>
+      <div class="hcard ch-C" ontouchstart="" onclick="selectBase('C')">C</div>
+      <div class="hcard ch-U" ontouchstart="" onclick="selectBase('U')">U</div>
+    </div>
+
+    <div class="prog-row">
+      <div class="prog-bg"><div class="prog-fill" id="pFill" style="width:0%"></div></div>
+      <div class="prog-txt" id="pTxt">0 / 0</div>
+    </div>
+    <div class="fb" id="fb"></div>
+  </div>
+</div>
+
+<!-- Mission complete overlay -->
+<div class="overlay" id="overlay">
+  <div class="obox">
+    <div class="oe" id="oEmoji"></div>
+    <div class="ot" id="oTitle"></div>
+    <div class="os" id="oStars"></div>
+    <div class="ob" id="oBody"></div>
+    <div class="obtns">
+      <button class="btn" ontouchstart="" onclick="retryMission()">다시 도전</button>
+      <button class="btn primary" ontouchstart="" onclick="nextMission()" id="nextBtn"></button>
+    </div>
+  </div>
+</div>
+
+<!-- All done -->
+<div class="alldone" id="alldone">
+  <div class="ad-em">🏆</div>
+  <div class="ad-t">모든 미션 완료!</div>
+  <div class="ad-sc" id="adSc"></div>
+  <div class="ad-sl">최종 점수</div>
+  <div class="stars-row" id="adStars"></div>
+  <div class="ad-sb" id="adSb"></div>
+  <button class="btn primary" ontouchstart="" onclick="restartAll()" style="padding:13px 32px;font-size:15px;">처음부터 다시 →</button>
+</div>
+
+<script>
+const BC={A:'var(--A)',T:'var(--T)',G:'var(--G)',C:'var(--C)',U:'var(--U)'};
+const TC={A:'var(--A-dk)',T:'#fff',G:'#fff',C:'#fff',U:'#fff'};
+const PAIR={A:'T',T:'A',G:'C',C:'G'};
+const BONDS={A:2,T:2,G:3,C:3};
+const BASES=['A','T','G','C'];
+
+const MISSIONS=[
+  {id:1,name:'입문',length:3, hints:3,pts:10, bg:'#2d6a4f',emoji:'🌱',
+   desc:'3개의 염기 상보 가닥을 완성하세요.',
+   tip:'A↔T, G↔C 규칙을 기억하면서 도전!'},
+  {id:2,name:'초급',length:5, hints:2,pts:15, bg:'#1d6fa5',emoji:'🔬',
+   desc:'5개의 염기 서열을 완성하세요.',
+   tip:'카드 색깔이 짝과 비슷해요. 색을 힌트로 써봐요.'},
+  {id:3,name:'중급',length:7, hints:2,pts:20, bg:'#9b4f12',emoji:'⚗️',
+   desc:'7개의 염기 서열을 완성하세요.',
+   tip:'G·C는 수소결합 3개! 더 강한 결합이에요.'},
+  {id:4,name:'고급',length:9, hints:1,pts:25, bg:'#6b2d8b',emoji:'🧪',
+   desc:'9개의 염기 서열을 완성하세요.',
+   tip:'힌트는 딱 1번. 신중하게 사용하세요!'},
+  {id:5,name:'도전',length:12,hints:1,pts:35, bg:'#1a1a18',emoji:'🏆',
+   desc:'12개의 긴 서열을 완성하세요.',
+   tip:'실제 DNA에 가까운 길이예요. 집중!'},
+];
+
+let cur=0, givenSeq=[], answerSeq=[], userAnswer=[];
+let selected=null, hintsLeft=0, hintsUsed=0;
+let totalScore=0, mStars=[], roundDone=false, mistakes=0;
+
+function init(){
+  mStars=MISSIONS.map(()=>0);
+  loadMission(0);
+}
+
+function loadMission(i){
+  cur=i;
+  const m=MISSIONS[i];
+  hintsLeft=m.hints; hintsUsed=0; roundDone=false;
+  // mission card
+  document.getElementById('mc').style.background=m.bg;
+  document.getElementById('mcBadge').textContent=`${m.emoji}  미션 ${m.id} / ${MISSIONS.length}`;
+  document.getElementById('mcTitle').textContent=`${m.name} — ${m.length}염기 서열`;
+  document.getElementById('mcDesc').innerHTML=`${m.desc}<br><span style="opacity:.55;font-size:11px">${m.tip}</span>`;
+  document.getElementById('mcPts').textContent=m.pts;
+  const dots=document.getElementById('mcDots');
+  dots.innerHTML=MISSIONS.map((_,j)=>`<div class="mdot${j<i?' done':j===i?' current':''}"></div>`).join('');
+  // dir arrows
+  const d='─'.repeat(m.length*3);
+  document.getElementById('dirT').textContent=`5' ${d} 3'`;
+  document.getElementById('dirB').textContent=`3' ${d} 5'`;
+  updateHintBtn();
+  newRound();
+}
+
+function newRound(){
+  const m=MISSIONS[cur];
+  givenSeq=Array.from({length:m.length},()=>BASES[Math.floor(Math.random()*4)]);
+  answerSeq=givenSeq.map(b=>PAIR[b]);
+  userAnswer=new Array(m.length).fill(null);
+  selected=null;
+  roundDone=false;
+  mistakes=0;
+  clearHandSelection();
+  document.getElementById('fb').className='fb';
+  renderBoard();
+  updateProgress();
+}
+
+function clearHandSelection(){
+  document.querySelectorAll('.hcard').forEach(c=>c.classList.remove('selected'));
+  selected=null;
+}
+
+/* ── Board ── */
+function renderBoard(){
+  const chip=b=>`<div class="ch ch-${b}">${b}</div>`;
+  const bcol=b=>{
+    let d=''; for(let i=0;i<BONDS[b];i++) d+=`<div class="bdot"></div>`;
+    return `<div class="bcol">${d}</div>`;
+  };
+  const slot=i=>{
+    const v=userAnswer[i];
+    let cls='slot'+(v?' filled':'');
+    let sty=v?`background:${BC[v]};color:${TC[v]};border-color:${BC[v]};border-style:solid;`:'';
+    return `<div class="${cls}" style="${sty}" data-i="${i}" onclick="placeCard(${i})" ontouchstart="">${v||''}</div>`;
+  };
+  document.getElementById('gRow').innerHTML=`<div class="slbl">주어진 가닥</div>`+givenSeq.map(chip).join('');
+  document.getElementById('bRow').innerHTML=`<div class="slbl"></div>`+givenSeq.map(bcol).join('');
+  document.getElementById('aRow').innerHTML=`<div class="slbl">상보 가닥</div>`+givenSeq.map((_,i)=>slot(i)).join('');
+}
+
+/* ── Select / place ── */
+function selectBase(b){
+  // toggle
+  if(selected===b){
+    clearHandSelection(); return;
+  }
+  clearHandSelection();
+  selected=b;
+  const cards=document.querySelectorAll('.hcard');
+  const idx={A:0,T:1,G:2,C:3,U:4}[b];
+  cards[idx].classList.add('selected');
+}
+
+function placeCard(i){
+  if(!selected) return;
+  userAnswer[i]=selected;
+  const s=document.querySelector(`[data-i="${i}"]`);
+  s.textContent=selected;
+  s.className='slot filled';
+  s.style.cssText=`background:${BC[selected]};color:${TC[selected]};border-color:${BC[selected]};border-style:solid;`;
+  updateProgress();
+}
+
+function updateProgress(){
+  const f=userAnswer.filter(x=>x!==null).length;
+  const t=givenSeq.length;
+  document.getElementById('pFill').style.width=(f/t*100)+'%';
+  document.getElementById('pTxt').textContent=`${f} / ${t}`;
+}
+
+/* ── Hint ── */
+function updateHintBtn(){
+  const btn=document.getElementById('hintBtn');
+  document.getElementById('hintLeft').textContent=`(${hintsLeft}회)`;
+  btn.disabled=hintsLeft<=0;
+}
+
+function useHint(){
+  if(hintsLeft<=0) return;
+  const i=userAnswer.findIndex(x=>x===null);
+  if(i===-1){showFB('inf','💡 모든 칸이 채워졌어요!'); return;}
+  hintsLeft--; hintsUsed++;
+  updateHintBtn();
+  userAnswer[i]=answerSeq[i];
+  const s=document.querySelector(`[data-i="${i}"]`);
+  s.textContent=answerSeq[i];
+  s.className='slot filled hinted';
+  s.style.cssText='';
+  updateProgress();
+  showFB('inf',`💡 ${i+1}번 칸: ${answerSeq[i]} — 힌트 사용 −5점`);
+}
+
+/* ── Check ── */
+function checkAnswer(){
+  if(roundDone) return;
+  let ok=0,ng=0;
+  userAnswer.forEach((v,i)=>{
+    const s=document.querySelector(`[data-i="${i}"]`);
+    s.classList.remove('correct','wrong','hinted');
+    if(!v) return;
+    if(v===answerSeq[i]){s.classList.add('correct');ok++;}
+    else{s.classList.add('wrong');ng++;setTimeout(()=>s.classList.remove('wrong'),400);}
+  });
+  const empty=givenSeq.length-userAnswer.filter(x=>x!==null).length;
+  if(ok===givenSeq.length){
+    roundDone=true;
+    const m=MISSIONS[cur];
+    const earned=Math.max(0,m.pts*m.length-hintsUsed*5);
+    const stars=hintsUsed===0?3:hintsUsed<=1?2:1;
+    totalScore+=earned;
+    mStars[cur]=stars;
+    document.getElementById('hScore').textContent=totalScore;
+    showOverlay(m,earned,stars);
+  } else {
+    mistakes++;
+    if(mistakes>=2){
+      roundDone=true;
+      totalScore=Math.max(0,totalScore-20);
+      document.getElementById('hScore').textContent=totalScore;
+      showFB('err',`오답이 2회 누적되어 현재 단계가 처음부터 다시 시작됩니다. (-20점)`);
+      setTimeout(()=>{
+        hintsLeft=MISSIONS[cur].hints;
+        hintsUsed=0;
+        updateHintBtn();
+        newRound();
+        showFB('inf','현재 단계가 처음으로 돌아왔어요. 새 염기 서열로 다시 도전해 보세요!');
+      },900);
+    } else {
+      showFB('err',`정답 ${ok}개 / 오답 ${ng}개${empty?` / 미입력 ${empty}개`:''} — 빨간 칸을 다시 확인해봐요! (오답 ${mistakes}/2)`);
+    }
+  }
+}
+
+/* ── Overlay ── */
+function showOverlay(m,earned,stars){
+  const isLast=cur===MISSIONS.length-1;
+  document.getElementById('oEmoji').textContent=stars===3?'🎉':stars===2?'✨':'👍';
+  document.getElementById('oTitle').textContent=stars===3?'완벽해요!':stars===2?'잘 했어요!':'통과!';
+  document.getElementById('oStars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('nextBtn').textContent=isLast?'결과 보기 🏁':'다음 미션 →';
+  const next=!isLast?`<br><br>다음: ${MISSIONS[cur+1].emoji} <strong>${MISSIONS[cur+1].name}</strong> (${MISSIONS[cur+1].length}염기)`:'';
+  document.getElementById('oBody').innerHTML=
+    `<strong>${m.emoji} ${m.name}</strong> 완료!<br>+<strong>${earned}점</strong>`+
+    (hintsUsed?`<br><span style="font-size:12px;color:var(--text3)">힌트 ${hintsUsed}회 (−${hintsUsed*5}점)</span>`:'')+next;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function retryMission(){
+  document.getElementById('overlay').classList.remove('show');
+  hintsLeft=MISSIONS[cur].hints; hintsUsed=0;
+  updateHintBtn();
+  newRound();
+}
+
+function nextMission(){
+  document.getElementById('overlay').classList.remove('show');
+  if(cur>=MISSIONS.length-1) showAllDone();
+  else loadMission(cur+1);
+}
+
+/* ── All done ── */
+function showAllDone(){
+  document.getElementById('adSc').textContent=totalScore+'점';
+  document.getElementById('adStars').innerHTML=mStars.map((s,i)=>
+    `<div class="sbox">${MISSIONS[i].emoji} ${MISSIONS[i].name}<br>${'⭐'.repeat(s)||'—'}<span>${MISSIONS[i].length}염기</span></div>`
+  ).join('');
+  const full=mStars.filter(s=>s===3).length;
+  document.getElementById('adSb').innerHTML=
+    full===MISSIONS.length
+      ?'모든 미션을 힌트 없이 클리어! 🧬<br>진정한 DNA 전문가예요!'
+      :`${full}개 미션 완벽 클리어!<br>힌트 없이 도전하면 더 높은 점수를 받을 수 있어요.`;
+  document.getElementById('alldone').classList.add('show');
+}
+
+function restartAll(){
+  document.getElementById('alldone').classList.remove('show');
+  totalScore=0;
+  document.getElementById('hScore').textContent='0';
+  init();
+}
+
+/* ── FB ── */
+function showFB(type,msg){
+  const el=document.getElementById('fb');
+  el.className=`fb show ${type}`; el.innerHTML=msg;
+}
+
+init();
+</script>
+</body>
+</html>
